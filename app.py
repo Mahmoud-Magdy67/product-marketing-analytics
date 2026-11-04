@@ -72,4 +72,4 @@ with tabs[2]:
     st.dataframe(pd.concat([size,retention[[1,3]].rename(columns={1:'month_1',3:'month_3'}),revenue.sum(axis=1).rename('revenue_brl')],axis=1),width='stretch')
 
 st.divider()
-st.caption('Built by Mahmoud Magdy · GitHub link: add repository URL after publishing')
+st.caption('Built by Mahmoud Magdy · [GitHub repository](https://github.com/Mahmoud-Magdy67/product-marketing-analytics)')

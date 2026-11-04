@@ -5,4 +5,5 @@ data/raw/*.parquet
 __pycache__/
 .env
 *.log
-.streamlit/
+.streamlit/*
+!.streamlit/config.toml
