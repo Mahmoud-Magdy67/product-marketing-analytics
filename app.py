@@ -12,7 +12,7 @@ from src.data_load import load
 st.set_page_config(layout='wide', page_title='Product & Marketing Analytics Sandbox')
 st.title('Product & Marketing Analytics Sandbox')
 st.caption('Marketing funnel, A/B testing, and cohort retention on Brazilian e-commerce data')
-st.sidebar.info('Source: public Olist Brazilian E-Commerce and Marketing Funnel datasets. The SQL stage is an attribution-completeness proxy. The A/B treatment is simulated.')
+st.sidebar.info('Source: public Olist Brazilian E-Commerce and Marketing Funnel datasets. The SQL stage is an attribution-completeness proxy. The A/B comparison is observational.')
 mql = load('mql')
 min_date = mql.first_contact_date.min().date(); max_date = mql.first_contact_date.max().date()
 dates = st.sidebar.date_input('MQL date range', (min_date,max_date), min_value=min_date,max_value=max_date)
@@ -38,21 +38,21 @@ with tabs[0]:
 
 with tabs[1]:
     r=ab_analysis()
-    st.info('Simulated experiment: sellers were randomly split 50/50 (seed 42) on historical reviews. No onboarding treatment was actually delivered, so these numbers cannot establish causal impact.')
+    st.info(f'Quasi-experiment: treatment = sellers with a first recorded sale after the median ({r["cutoff_date"]}); control = sellers on or before it. First sale is a proxy for onboarding date. No actual platform update or flow assignment is recorded, so this is an observational comparison, not a true randomized trial or causal estimate.')
     left,right=st.columns([1,1])
     with left:
-        fig=px.bar(x=['Standard (control)','Premium (simulated)'],y=[r['mean_control'],r['mean_treatment']],
+        fig=px.bar(x=['Earlier sellers (control)','Later sellers (proxy treatment)'],y=[r['mean_control'],r['mean_treatment']],
                    error_y=[1.96*r['sd_control']/np.sqrt(r['n_control']),1.96*r['sd_treatment']/np.sqrt(r['n_treatment'])],
                    labels={'x':'Group','y':'Mean seller review score'},title='Seller-level mean review score')
         fig.update_yaxes(range=[0,5]); st.plotly_chart(fig,use_container_width=True)
     with right:
-        stats_table=pd.DataFrame({'Metric':['Control n','Treatment n','Control mean','Treatment mean','Difference','Welch t','p-value','Cohen d','95% CI','Observed-effect power'],
-          'Value':[r['n_control'],r['n_treatment'],f'{r["mean_control"]:.3f}',f'{r["mean_treatment"]:.3f}',f'{r["difference"]:+.3f}',f'{r["t_stat"]:.3f}',f'{r["p_value"]:.4f}',f'{r["cohens_d"]:+.3f}',f'[{r["ci_low"]:.3f}, {r["ci_high"]:.3f}]',f'{r["power"]:.1%}']})
+        stats_table=pd.DataFrame({'Metric':['Control n','Treatment n','Control mean','Treatment mean','Difference','Welch t','p-value','Cohen d','95% CI','Observed-effect power','Design power at 0.2 points'],
+          'Value':[r['n_control'],r['n_treatment'],f'{r["mean_control"]:.3f}',f'{r["mean_treatment"]:.3f}',f'{r["difference"]:+.3f}',f'{r["t_stat"]:.3f}',f'{r["p_value"]:.2g}',f'{r["cohens_d"]:+.3f}',f'[{r["ci_low"]:.3f}, {r["ci_high"]:.3f}]',f'{r["power"]:.1%}',f'{r["design_power_0_2"]:.1%}']})
         stats_table['Value'] = stats_table['Value'].astype(str)
         st.dataframe(stats_table,hide_index=True,width='stretch')
     verdict=('Statistically significant' if r['significant'] else 'No statistically significant difference')
-    (st.success if r['significant'] else st.info)(f'{verdict} at α = 0.05. A difference of 0.2 review points is the illustrative practical threshold; observed difference: {r["difference"]:+.3f}.')
-    st.caption('Post hoc power uses the observed effect and is descriptive, not evidence for the null. For study design, use the 0.2-point practical threshold and the power curve below.')
+    (st.success if r['significant'] else st.info)(f'{verdict} at α = 0.05. Observed difference: {r["difference"]:+.3f} review points. The illustrative practical threshold is 0.2 points; this estimate falls below it. The comparison does not establish an onboarding effect.')
+    st.caption('Observed-effect power is descriptive and should not be treated as independent evidence. Design power at a prespecified 0.2-point difference is more useful for planning. Calendar time, seller mix, order volume, and other factors may confound this comparison.')
     effects=np.linspace(.02,.5,50)
     powers=[TTestIndPower().power(x,nobs1=r['n_treatment'],ratio=r['n_control']/r['n_treatment'],alpha=.05) for x in effects]
     fig=px.line(x=effects,y=powers,labels={'x':'Assumed absolute Cohen d','y':'Power'},title='Design power across assumed effect sizes')
