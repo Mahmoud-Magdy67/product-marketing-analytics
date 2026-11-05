@@ -2,7 +2,7 @@
 
 An interactive portfolio dashboard that turns public Brazilian e-commerce data into a seller acquisition funnel, a transparent observational comparison, and customer retention cohorts.
 
-[Live demo on Streamlit Cloud — coming soon](#) · [Deployment steps](DEPLOY.md)
+[**Live demo**](https://appuct-marketing-analytics-buyfkikzghcqhx4iredyvn.streamlit.app/) · [Deployment steps](DEPLOY.md)
 
 ## Dashboard preview
 
